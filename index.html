@@ -1,0 +1,37 @@
+<!doctype html>
+
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <title>Play Store Apps</title>
+    <meta name="description" content="Play Store Apps">
+    <meta name="author" content="André La Rocca">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/lodash.js/4.17.11/lodash.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/2.7.2/Chart.bundle.min.js"></script>
+  </head>
+
+  <body>
+    <script>
+      const data = ''
+
+      document.addEventListener('DOMContentLoaded', () => {
+        const chart = document.getElementById('play-store-apps')
+
+        const playStoreApps = new Chart(chart, {
+          type: 'bar',
+          data: {
+            labels: '',
+            datasets: [],
+          },
+          options: {
+            title: {
+              display: true,
+              text: '',
+            },
+          },
+        })
+      });
+    </script>
+    <canvas id="play-store-apps" max-width="400" max-height="400"></canvas>
+  </body>
+</html>
