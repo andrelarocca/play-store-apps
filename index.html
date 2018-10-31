@@ -8,6 +8,7 @@
     <meta name="author" content="André La Rocca">
     <script src="https://cdnjs.cloudflare.com/ajax/libs/lodash.js/4.17.11/lodash.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/2.7.2/Chart.bundle.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/moment.js/2.22.2/moment.min.js"></script>
   </head>
 
   <body>
@@ -8511,23 +8512,139 @@
       document.addEventListener('DOMContentLoaded', () => {
         const chart = document.getElementById('play-store-apps')
 
-        let datasets = []
+        const humanizeKeys = keys => {
+          return _.map(keys, key => {
+            return _.startCase(_.lowerCase(key))
+          })
+        }
+
+        const totalDownloads = apps => {
+          return _.reduce(apps, (sum, app) => {
+            return sum + Number(app['Installs'])
+          }, 0)
+        }
+
+        const downloadsByCategory = _.groupBy(data, app => app['Category'])
+        _.each(downloadsByCategory, (apps, category) => {
+          downloadsByCategory[category] = totalDownloads(apps)
+        })
+        const downloadsByCategoryWithoutGame = _.omitBy(downloadsByCategory, (downloads, category) => category === 'GAME')
+
+        const downloadsBySize = _.groupBy(data, app => {
+          const size = Number(app['Size'])
+
+          if (size <= 1) return 'Até 1MB'
+          if (size <= 10) return 'Até 10MB'
+          if (size <= 50) return 'Até 50MB'
+          if (size <= 100) return 'Até 100MB'
+          else return 'Mais de 100MB'
+        })
+        _.each(downloadsBySize, (apps, size) => {
+          downloadsBySize[size] = totalDownloads(apps)
+        })
+
+        const downloadsByLastUpdate = _.groupBy(data, app => {
+          const today = moment()
+          const lastUpdated = moment(app['Last Updated'])
+          const monthsFromToday = today.diff(lastUpdated, 'months')
+
+          if (monthsFromToday <= 1) return 'Último mês'
+          if (monthsFromToday <= 3) return 'Últimos três meses'
+          if (monthsFromToday <= 6) return 'Últimos seis meses'
+          if (monthsFromToday <= 12) return 'Último ano'
+          else return 'Mais de um ano'
+        })
+        _.each(downloadsByLastUpdate, (apps, lastUpdate) => {
+          downloadsByLastUpdate[lastUpdate] = totalDownloads(apps)
+        })
+
+        const datasets = [
+          {
+            title: 'Milhões de Downloads por Categoria',
+            labels: humanizeKeys(_.keys(downloadsByCategory)),
+            data: _.values(downloadsByCategory),
+            backgroundColor: '#fa7921',
+          },
+          {
+            title: 'Milhões de Downloads por Categoria (exceto Jogos)',
+            labels: humanizeKeys(_.keys(downloadsByCategoryWithoutGame)),
+            data: _.values(downloadsByCategoryWithoutGame),
+            backgroundColor: '#fe9920',
+          },
+          {
+            title: 'Milhões de Downloads por Tamanho',
+            labels: humanizeKeys(_.keys(downloadsBySize)),
+            data: _.values(downloadsBySize),
+            backgroundColor: '#0c4767',
+          },
+          {
+            title: 'Milhões de Downloads por Última Atualização',
+            labels: humanizeKeys(_.keys(downloadsByLastUpdate)),
+            data: _.values(downloadsByLastUpdate),
+            backgroundColor: '#566e3d',
+          },
+        ]
+
+        // Set default view
+        let chartData = {
+          labels: datasets[0].labels,
+          datasets: [ datasets[0] ],
+          backgroundColor: datasets[0].backgroundColor,
+        }
+
+        let options = {
+          title: {
+            display: true,
+            text: 'Milhões de Downloads por Categoria',
+          },
+          legend: {
+            display: false,
+          },
+        }
 
         const playStoreApps = new Chart(chart, {
+          options,
           type: 'bar',
-          data: {
-            labels: [],
-            datasets: [],
-          },
-          options: {
-            title: {
-              display: true,
-              text: 'Teste',
-            },
-          },
+          data: chartData,
         })
+
+        document.getElementById('category').onclick = () => {
+          chartData.labels = datasets[0].labels
+          chartData.datasets = [ datasets[0] ]
+          chartData.backgroundColor = datasets[0].backgroundColor
+          playStoreApps.options.title.text = datasets[0].title
+          playStoreApps.update()
+        }
+
+        document.getElementById('noGames').onclick = () => {
+          chartData.labels = datasets[1].labels
+          chartData.datasets = [ datasets[1] ]
+          chartData.backgroundColor = datasets[1].backgroundColor
+          playStoreApps.options.title.text = datasets[1].title
+          playStoreApps.update()
+        }
+
+        document.getElementById('size').onclick = () => {
+          chartData.labels = datasets[2].labels
+          chartData.datasets = [ datasets[2] ]
+          chartData.backgroundColor = datasets[2].backgroundColor
+          playStoreApps.options.title.text = datasets[2].title
+          playStoreApps.update()
+        }
+
+        document.getElementById('update').onclick = () => {
+          chartData.labels = datasets[3].labels
+          chartData.datasets = [ datasets[3] ]
+          chartData.backgroundColor = datasets[3].backgroundColor
+          playStoreApps.options.title.text = datasets[3].title
+          playStoreApps.update()
+        }
       });
     </script>
+    <button id="category">Milhões de Downloads por Categoria</button>
+    <button id="noGames">Milhões de Downloads por Categoria (exceto Jogos)</button>
+    <button id="size">Milhões de Downloads por Tamanho</button>
+    <button id="update">Milhões de Downloads por Última Atualização</button>
     <canvas id="play-store-apps" max-width="400" max-height="400"></canvas>
   </body>
 </html>
